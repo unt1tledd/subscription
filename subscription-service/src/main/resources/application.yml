@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: subscription-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/subscription_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migrations/subscription
+
+server:
+  port: 8081
+
+payment:
+  grpc:
+    host: ${PAYMENT_GRPC_HOST:localhost}
+    port: ${PAYMENT_GRPC_PORT:9091}

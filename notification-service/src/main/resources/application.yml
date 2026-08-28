@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: ${NOTIFICATION_DB_URL:jdbc:postgresql://localhost:5435/notification}
+    username: ${NOTIFICATION_DB_USERNAME:postgres}
+    password: ${NOTIFICATION_DB_PASSWORD:postgres}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migrations
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: notification-service
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    listener:
+      ack-mode: record
+
+notification:
+  kafka:
+    payment-topic: ${NOTIFICATION_KAFKA_PAYMENT_TOPIC:payment-status-changed}
+    dlt-suffix: ${NOTIFICATION_KAFKA_DLT_SUFFIX:.DLT}
+    retry-delay-ms: ${NOTIFICATION_KAFKA_RETRY_DELAY_MS:1000}
+    retry-attempts: ${NOTIFICATION_KAFKA_RETRY_ATTEMPTS:3}
+    partitions: ${NOTIFICATION_KAFKA_PARTITIONS:1}

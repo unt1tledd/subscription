@@ -1,0 +1,130 @@
+services:
+  payment-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+
+  subscription-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: subscription_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d subscription_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - subscription-db-data:/var/lib/postgresql/data
+
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: notification
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notification"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://payment-db:5432/payment_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PAYMENT_GRPC_PORT: 9091
+      PAYMENT_OUTBOX_TOPIC: payment-status-changed
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  subscription-service:
+    build:
+      context: .
+      dockerfile: subscription-service/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://subscription-db:5432/subscription_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      PAYMENT_GRPC_HOST: payment-service
+      PAYMENT_GRPC_PORT: 9091
+    ports:
+      - "8081:8081"
+    depends_on:
+      subscription-db:
+        condition: service_healthy
+      payment-service:
+        condition: service_started
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    environment:
+      NOTIFICATION_DB_URL: jdbc:postgresql://notification-db:5432/notification
+      NOTIFICATION_DB_USERNAME: postgres
+      NOTIFICATION_DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFICATION_KAFKA_PAYMENT_TOPIC: payment-status-changed
+      NOTIFICATION_KAFKA_PARTITIONS: 1
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+volumes:
+  payment-db-data:
+  subscription-db-data:
+  notification-db-data:

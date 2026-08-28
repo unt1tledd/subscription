@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payment_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migrations/payment
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      acks: all
+
+server:
+  port: 8082
+grpc:
+  server:
+    port: ${PAYMENT_GRPC_PORT:9091}
+
+payment:
+  pending-check-delay-ms: ${PAYMENT_PENDING_CHECK_DELAY_MS:30000}
+  outbox:
+    topic: ${PAYMENT_OUTBOX_TOPIC:payment-status-changed}
+    batch-size: ${PAYMENT_OUTBOX_BATCH_SIZE:100}
+    poll-delay-ms: ${PAYMENT_OUTBOX_POLL_DELAY_MS:1000}
+    recovery-delay-ms: ${PAYMENT_OUTBOX_RECOVERY_DELAY_MS:60000}
