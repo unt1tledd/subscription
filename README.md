@@ -183,3 +183,4 @@ curl "http://localhost:8081/api/v1/subscriptions?userId=1&page=0&size=10"
 - Kafka retry и Dead Letter Topic;
 - восстановление зависших Outbox-событий;
 - отдельная база данных для каждого сервиса.
+- AOP-логирование методов контроллеров и времени выполнения запросов;
