@@ -1,4 +1,4 @@
-# Subscription Service
+# Subscription Service [![CI](https://github.com/unt1tledd/subscription/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/unt1tledd/subscription/actions/workflows/ci.yml)
 
 Учебный проект системы управления подписками, построенный на микросервисной архитектуре.
 
