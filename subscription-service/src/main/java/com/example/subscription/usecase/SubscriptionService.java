@@ -5,7 +5,6 @@ import com.example.subscription.dto.subscription.CheckoutResult;
 import com.example.subscription.dto.subscription.PaymentResult;
 import com.example.subscription.entity.Subscription;
 import com.example.subscription.entity.SubscriptionStatus;
-import com.example.subscription.errors.subscription.SubscriptionAlreadyExistsException;
 import com.example.subscription.errors.subscription.SubscriptionNotFoundException;
 import com.example.subscription.repository.SubscriptionRepository;
 import org.springframework.data.domain.Page;
